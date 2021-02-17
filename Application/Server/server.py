@@ -4,9 +4,13 @@ from aspire import API
 
 from Server.config import config
 
+
 cnf = config.get('dev_con')
 
-from Server.models import Tool
+
+from Server.models import PowerTool
+from Server.api import toolsApi
+from Server.uiServer import retool_ui
 
 gmTools = API(
     debug=cnf.DEBUG,
@@ -17,10 +21,11 @@ gmTools = API(
     contact=cnf.CONTACT,
     license=cnf.LICENSE,
     auto_escape=cnf.AUTO_ESCAPE,
-    #templates_dir=cnf.TEMPLATES_DIR,
-    #static_dir=cnf.STATIC_DIR,
+    templates_dir=cnf.APP_TEMPLATES,
+    static_dir=cnf.APP_STATIC,
     secret_key=cnf.SECRET_KEY,
-    #static_route=cnf.STATIC_ROUTE,
+    enable_https=cnf.SERVE_HTTPS,
+    static_route=cnf.STATIC_ROUTE,
     #docs_route=cnf.DOCUMENT_ROUTE
 )
 
@@ -36,48 +41,12 @@ gmTools.add_middleware(
 
 #------ ROUTES MOUNT POINTS --------
 
-@gmTools.route('/')
-async def index(req, resp):   
-    data = {"product": cnf.TITLE, "description": cnf.DESCRIPTION}
-    tool = Tool("Laser Measure")
-    tool.tool_type = "GLM42"
-    tool.brand="bosch"
-    tool.category = 'Measurement'
-    tool.specification["power"]["source"] = "2xAAA Battery"
-    tool.specification["power"]["volts"] = 3
-    tool.specification["power"]["current"] = 0.3
-    tool.specification["props"] = ["real time", "five measurement mode"] 
-    tool.specification["range"] = "135 ft"
-    tool.available = True
-    tool.condition = ["New"]
-    tool.url = f"{tool.url}/{tool.id}"
-    tool.cost["jad"] = 15000.00
-    
-
-    data["tool"] = {
-        "id": tool.id,
-        "name": tool.name,
-        "brand": tool.brand,
-        "type": tool.tool_type,
-        "category": tool.category,
-        "specifications": tool.specification,
-        "available": tool.available,
-        "condition": tool.condition,
-        "cost": tool.cost,
-        "url": tool.url,
-        "images": tool.images_url
-
-
-    }
-
-    resp.media = data
-
-
+gmTools.mount('/retool', retool_ui)
 #------ WEBSOCKET MOUNT POINTS -----
 
 
 #------ API MOUNT POINTS -----------
-
+gmTools.mount('/tools', toolsApi)
 #------ MAIL PROTOCOL MOUNT POINT --
 
 #------- CLIENT APPLICATIONS MOUNT POINTS ---
